@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { 
   LayoutDashboard, 
   Grid3X3, 
@@ -11,8 +11,11 @@ import {
   ShoppingCart, 
   Menu, 
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  LogOut
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 interface SidebarItem {
   label: string
@@ -60,6 +63,17 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast.success('Logged out successfully')
+      router.push('/admin/login')
+    } catch (error) {
+      toast.error('Failed to logout')
+    }
+  }
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -99,7 +113,14 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: 
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 space-y-2">
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors w-full"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Logout</span>
+        </button>
         <Link
           href="/"
           className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"

@@ -76,7 +76,8 @@ export default function NewArrivalItems() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">New Arrivals</h2>
           <div className="bg-white rounded-lg p-12 text-center">
-            <p className="text-gray-500">No new arrivals available at the moment.</p>
+            <p className="text-gray-500 mb-2">No new arrivals available yet.</p>
+            <p className="text-gray-400 text-sm">Add products and mark them as "new arrival" from the admin panel to see them here.</p>
           </div>
         </div>
       </section>

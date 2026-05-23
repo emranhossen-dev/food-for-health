@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Menu, TrendingUp, Package, Users, ShoppingCart, DollarSign } from 'lucide-react'
-import AdminSidebar from '@/components/admin/AdminSidebar'
+import { TrendingUp, Package, Users, ShoppingCart, DollarSign } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface DashboardStats {
@@ -22,7 +21,6 @@ interface RecentOrder {
 }
 
 export default function AdminDashboard() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,
     totalOrders: 0,
@@ -133,40 +131,16 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-screen">
-        <AdminSidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen">
-      <AdminSidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-      
-      <div className="flex-1 overflow-auto bg-gray-800">
-        {/* Mobile Header */}
-        <div className="lg:hidden bg-gray-800 shadow-sm p-4 flex items-center justify-between border-b border-gray-700">
-          <h1 className="text-xl font-bold text-white">Dashboard</h1>
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-700 text-white"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Main Content */}
-        <div className="p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
-            <p className="text-gray-300 mt-2">Welcome to your admin dashboard</p>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Total Sales"
               value={`৳${stats.totalSales.toLocaleString()}`}
@@ -223,7 +197,7 @@ export default function AdminDashboard() {
                   {recentOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                        #{order.order_number}
+                        {'#' + order.order_number}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {order.customer_name}
@@ -251,8 +225,6 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-        </div>
-      </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Upload, X, Plus, Trash2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 interface Category {
@@ -38,7 +38,7 @@ interface ProductFormData {
 export default function AddProductForm() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
-  const [imageSource, setImageSource] = useState<'upload' | 'link'>('upload')
+  const [imageSource, setImageSource] = useState<'upload' | 'link'>('link')
   const [benefitInput, setBenefitInput] = useState('')
   
   const [formData, setFormData] = useState<ProductFormData>({
@@ -66,7 +66,7 @@ export default function AddProductForm() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('categories')
         .select('*')
         .order('name_en')
@@ -75,7 +75,7 @@ export default function AddProductForm() {
       setCategories(data || [])
     } catch (error) {
       console.error('Error fetching categories:', error)
-      toast.error('Failed to fetch categories')
+      toast.error('Failed to fetch categories: ' + (error as Error).message)
     }
   }
 
@@ -198,37 +198,14 @@ export default function AddProductForm() {
         }
       }
 
-      // Upload images and get URLs
-      const uploadedImages = []
-      for (const image of formData.images) {
-        if (image.file) {
-          const fileExt = image.file.name.split('.').pop()
-          const fileName = `${Date.now()}-${Math.random()}.${fileExt}`
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(fileName, image.file)
-
-          if (uploadError) throw uploadError
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(fileName)
-
-          uploadedImages.push({
-            image_url: publicUrl,
-            is_primary: image.is_primary
-          })
-        } else {
-          uploadedImages.push({
-            image_url: image.url,
-            is_primary: image.is_primary
-          })
-        }
-      }
+      // Only use image URLs (no upload to storage)
+      const uploadedImages = formData.images.map(image => ({
+        image_url: image.url,
+        is_primary: image.is_primary
+      }))
 
       // Create product
-      const { data: product, error: productError } = await supabase
+      const { data: product, error: productError } = await supabaseAdmin
         .from('products')
         .insert({
           name_en: formData.name_en,
@@ -253,7 +230,7 @@ export default function AddProductForm() {
       if (productError) throw productError
 
       // Insert product images
-      const { error: imagesError } = await supabase
+      const { error: imagesError } = await supabaseAdmin
         .from('product_images')
         .insert(
           uploadedImages.map(img => ({
@@ -289,21 +266,21 @@ export default function AddProductForm() {
 
     } catch (error) {
       console.error('Error adding product:', error)
-      toast.error('Failed to add product')
+      toast.error('Failed to add product: ' + (error as Error).message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Product</h2>
+    <div className="bg-gray-800 rounded-lg shadow-sm p-6">
+      <h2 className="text-2xl font-bold text-white mb-6">Add New Product</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Product Name (English) *
             </label>
             <input
@@ -312,12 +289,12 @@ export default function AddProductForm() {
               value={formData.name_en}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Product Name (Bangla)
             </label>
             <input
@@ -325,14 +302,14 @@ export default function AddProductForm() {
               name="name_bn"
               value={formData.name_bn}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-bengali"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-bengali"
             />
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Description
           </label>
           <textarea
@@ -340,14 +317,14 @@ export default function AddProductForm() {
             value={formData.description}
             onChange={handleInputChange}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
 
         {/* Pricing */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Current Price *
             </label>
             <input
@@ -358,12 +335,12 @@ export default function AddProductForm() {
               required
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Old Price
             </label>
             <input
@@ -373,12 +350,12 @@ export default function AddProductForm() {
               onChange={handleInputChange}
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Discount Percentage
             </label>
             <input
@@ -388,7 +365,7 @@ export default function AddProductForm() {
               onChange={handleInputChange}
               min="0"
               max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
         </div>
@@ -396,7 +373,7 @@ export default function AddProductForm() {
         {/* Stock and Unit */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Stock Quantity
             </label>
             <input
@@ -405,19 +382,19 @@ export default function AddProductForm() {
               value={formData.stock_quantity}
               onChange={handleInputChange}
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Unit Type *
             </label>
             <select
               name="unit_type"
               value={formData.unit_type}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="solid">Solid (Weight)</option>
               <option value="liquid">Liquid (Volume)</option>
@@ -426,7 +403,7 @@ export default function AddProductForm() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Unit *
             </label>
             <input
@@ -436,7 +413,7 @@ export default function AddProductForm() {
               onChange={handleInputChange}
               required
               placeholder={formData.unit_type === 'solid' ? 'e.g., 250g, 500g, 1kg' : formData.unit_type === 'liquid' ? 'e.g., 250ml, 500ml, 1L' : 'e.g., 1pc, 3pcs, 5pcs'}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
         </div>
@@ -444,7 +421,7 @@ export default function AddProductForm() {
         {/* Category and Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Category *
             </label>
             <select
@@ -452,7 +429,7 @@ export default function AddProductForm() {
               value={formData.category_id}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="">Select a category</option>
               {categories.map((category) => (
@@ -464,14 +441,14 @@ export default function AddProductForm() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="none">None</option>
               <option value="new_arrival">New Arrival</option>
@@ -491,14 +468,14 @@ export default function AddProductForm() {
             onChange={handleInputChange}
             className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
           />
-          <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-700">
+          <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-300">
             Show in featured products carousel
           </label>
         </div>
 
         {/* Key Health Benefits */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Key Health Benefits
           </label>
           <div className="flex space-x-2 mb-3">
@@ -508,7 +485,7 @@ export default function AddProductForm() {
               onChange={(e) => setBenefitInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBenefit())}
               placeholder="Add a health benefit"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <button
               type="button"
@@ -541,7 +518,7 @@ export default function AddProductForm() {
 
         {/* Nutritional Info */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Nutritional Information
           </label>
           <textarea
@@ -550,13 +527,13 @@ export default function AddProductForm() {
             onChange={handleInputChange}
             rows={3}
             placeholder="e.g., Calories: 50, Protein: 2g, Fiber: 3g per 100g"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
 
         {/* Dosage and Usage */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Dosage and Usage
           </label>
           <textarea
@@ -565,63 +542,21 @@ export default function AddProductForm() {
             onChange={handleInputChange}
             rows={2}
             placeholder="e.g., Take 1-2 tablets daily after meals"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
 
         {/* Product Images */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Product Images *
           </label>
           
-          {/* Image Source Toggle */}
-          <div className="flex space-x-4 mb-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="upload"
-                checked={imageSource === 'upload'}
-                onChange={() => setImageSource('upload')}
-                className="mr-2"
-              />
-              Upload Files
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="link"
-                checked={imageSource === 'link'}
-                onChange={() => setImageSource('link')}
-                className="mr-2"
-              />
-              Use Image Links
-            </label>
-          </div>
-
-          {/* Image Upload/Link */}
-          {imageSource === 'upload' ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className="cursor-pointer inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Choose Images
-              </label>
-              <p className="mt-2 text-sm text-gray-500">
-                Upload multiple images. First image will be primary.
-              </p>
-            </div>
-          ) : (
+          {/* Image Links */}
+          <div className="mb-4">
+            <p className="text-sm text-gray-500 mb-2">
+              Add image URLs for the product. First image will be primary.
+            </p>
             <div className="flex space-x-2 mb-4">
               <input
                 type="url"
@@ -635,7 +570,7 @@ export default function AddProductForm() {
                     }
                   }
                 }}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               <button
                 type="button"
@@ -651,7 +586,7 @@ export default function AddProductForm() {
                 Add
               </button>
             </div>
-          )}
+          </div>
 
           {/* Image Preview */}
           {formData.images.length > 0 && (

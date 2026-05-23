@@ -152,19 +152,5 @@ CREATE POLICY "Users can manage their own cart" ON cart FOR ALL USING (auth.uid(
 -- Admin policies (using service role key bypasses RLS)
 -- For admin operations, use the service role key which bypasses RLS
 
--- Insert sample categories
-INSERT INTO categories (name_en, name_bn, image_url) VALUES
-('Organic Vegetables', 'অর্গানিক সবজি', 'https://images.unsplash.com/photo-1590523278191-71d16a5e8b90?w=300'),
-('Fresh Fruits', 'তাজা ফল', 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=300'),
-('Dairy Products', 'দুগ্ধজাত পণ্য', 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300'),
-('Tea & Coffee', 'চা ও কফি', 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300'),
-('Honey & Spices', 'মধু ও মশলা', 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300'),
-('Dry Fruits & Nuts', 'শুকনো ফল ও বাদাম', 'https://images.unsplash.com/photo-1518840483363-ccabc2606adb?w=300');
-
--- Insert sample promotional banners
-INSERT INTO promotional_banners (title, image_url, target_url, banner_position) VALUES
-('Summer Sale', 'https://images.unsplash.com/photo-1464975917234-0d8a2c8e64b1?w=600', '/products?category=fruits', 'top_left'),
-('Fresh Organic', 'https://images.unsplash.com/photo-1506617420156-8e4536971650?w=600', '/products?category=vegetables', 'top_right'),
-('Special Offer', 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400', '/products?sale=true', 'bottom_1'),
-('New Arrival', 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=400', '/products?new=true', 'bottom_2'),
-('Best Seller', 'https://images.unsplash.com/photo-1543076497-a5131ee9c5da?w=400', '/products?featured=true', 'bottom_3');
+-- Sample data removed - database will start empty
+-- Categories and banners will be added through the admin panel

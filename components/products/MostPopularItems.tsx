@@ -76,7 +76,8 @@ export default function MostPopularItems() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Most Popular Items</h2>
           <div className="bg-gray-50 rounded-lg p-12 text-center">
-            <p className="text-gray-500">No popular products available at the moment.</p>
+            <p className="text-gray-500 mb-2">No popular items available yet.</p>
+            <p className="text-gray-400 text-sm">Add products and mark them as "best selling" from the admin panel to see them here.</p>
           </div>
         </div>
       </section>
