@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ShoppingCart, Heart } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -10,6 +10,17 @@ interface ProductImage {
   id: string
   image_url: string
   is_primary: boolean
+}
+
+interface ProductVariant {
+  id: string
+  quantity_option: string
+  quantity_type: 'weight' | 'volume' | 'pieces'
+  current_price: number
+  old_price?: number
+  discount_percentage?: number
+  stock_quantity: number
+  is_default: boolean
 }
 
 interface Product {
@@ -24,14 +35,9 @@ interface Product {
   unit: string
   unit_type: 'solid' | 'liquid' | 'quantity'
   status: 'none' | 'new_arrival' | 'best_selling' | 'featured'
+  slug: string
   product_images: ProductImage[]
-  quantity_prices?: {
-    [key: string]: {
-      current_price: number
-      old_price?: number
-      discount_percentage?: number
-    }
-  }
+  variants?: ProductVariant[]
 }
 
 interface ProductCardProps {
@@ -40,15 +46,27 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart()
-  const [selectedQuantity, setSelectedQuantity] = useState<string>('')
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
   const [loading, setLoading] = useState(false)
 
   const primaryImage = product.product_images.find(img => img.is_primary) || product.product_images[0]
 
-  // Get current pricing based on selected quantity
+  // Set default variant on mount
+  useEffect(() => {
+    if (product.variants && product.variants.length > 0) {
+      const defaultVariant = product.variants.find(v => v.is_default) || product.variants[0]
+      setSelectedVariant(defaultVariant)
+    }
+  }, [product.variants])
+
+  // Get current pricing based on selected variant
   const getCurrentPricing = () => {
-    if (selectedQuantity && product.quantity_prices?.[selectedQuantity]) {
-      return product.quantity_prices[selectedQuantity]
+    if (selectedVariant) {
+      return {
+        current_price: selectedVariant.current_price,
+        old_price: selectedVariant.old_price,
+        discount_percentage: selectedVariant.discount_percentage
+      }
     }
     return {
       current_price: product.current_price,
@@ -60,12 +78,28 @@ export default function ProductCard({ product }: ProductCardProps) {
   const currentPricing = getCurrentPricing()
 
   const getQuantityOptions = () => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants
+    }
+    // Fallback to hardcoded options if no variants
     if (product.unit_type === 'solid') {
-      return ['250g', '500g', '1kg']
+      return [
+        { id: '1', quantity_option: '250g', quantity_type: 'weight' as const, current_price: product.current_price * 0.5, stock_quantity: 100, is_default: true },
+        { id: '2', quantity_option: '500g', quantity_type: 'weight' as const, current_price: product.current_price, stock_quantity: 100, is_default: false },
+        { id: '3', quantity_option: '1kg', quantity_type: 'weight' as const, current_price: product.current_price * 1.8, stock_quantity: 100, is_default: false }
+      ]
     } else if (product.unit_type === 'liquid') {
-      return ['250ml', '500ml', '1L']
+      return [
+        { id: '1', quantity_option: '250ml', quantity_type: 'volume' as const, current_price: product.current_price * 0.3, stock_quantity: 100, is_default: true },
+        { id: '2', quantity_option: '500ml', quantity_type: 'volume' as const, current_price: product.current_price * 0.6, stock_quantity: 100, is_default: false },
+        { id: '3', quantity_option: '1L', quantity_type: 'volume' as const, current_price: product.current_price, stock_quantity: 100, is_default: false }
+      ]
     } else {
-      return ['1pc', '3pcs', '5pcs']
+      return [
+        { id: '1', quantity_option: '1pc', quantity_type: 'pieces' as const, current_price: product.current_price, stock_quantity: 100, is_default: true },
+        { id: '2', quantity_option: '3pcs', quantity_type: 'pieces' as const, current_price: product.current_price * 2.5, stock_quantity: 100, is_default: false },
+        { id: '3', quantity_option: '5pcs', quantity_type: 'pieces' as const, current_price: product.current_price * 4, stock_quantity: 100, is_default: false }
+      ]
     }
   }
 
@@ -97,24 +131,25 @@ export default function ProductCard({ product }: ProductCardProps) {
     )
   }
 
-  const handleAddToCart = async () => {
-    if (!selectedQuantity) {
-      toast.error('Please select a quantity')
-      return
-    }
-
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // Use selected variant or default to first option
+    const variantToAdd = selectedVariant || getQuantityOptions()[0]
+    
     setLoading(true)
     try {
       const cartItem = {
-        id: product.id,
+        id: `${product.id}-${variantToAdd.id}`,
         name_en: product.name_en,
         name_bn: product.name_bn,
         image_url: primaryImage?.image_url,
-        current_price: currentPricing.current_price,
-        old_price: currentPricing.old_price,
+        current_price: variantToAdd.current_price,
+        old_price: variantToAdd.old_price,
         unit: product.unit,
         quantity: 1,
-        selectedQuantity: selectedQuantity
+        selectedQuantity: variantToAdd.quantity_option
       }
       
       addToCart(cartItem)
@@ -125,23 +160,24 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   }
 
-  const handleBuyNow = async () => {
-    if (!selectedQuantity) {
-      toast.error('Please select a quantity')
-      return
-    }
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // Use selected variant or default to first option
+    const variantToAdd = selectedVariant || getQuantityOptions()[0]
 
     // Add to cart and redirect to checkout
     const cartItem = {
-      id: product.id,
+      id: `${product.id}-${variantToAdd.id}`,
       name_en: product.name_en,
       name_bn: product.name_bn,
       image_url: primaryImage?.image_url,
-      current_price: currentPricing.current_price,
-      old_price: currentPricing.old_price,
+      current_price: variantToAdd.current_price,
+      old_price: variantToAdd.old_price,
       unit: product.unit,
       quantity: 1,
-      selectedQuantity: selectedQuantity
+      selectedQuantity: variantToAdd.quantity_option
     }
     
     addToCart(cartItem)
@@ -149,7 +185,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/products/${product.id}`} className="block">
+    <Link href={`/products/${product.slug}`} className="block">
       <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden group cursor-pointer max-w-64">
       <div className="relative">
         {/* Product Image */}
@@ -208,17 +244,21 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Quantity Selector */}
         <div className="mt-2">
           <div className="flex space-x-1">
-            {getQuantityOptions().map(option => (
+            {getQuantityOptions().map(variant => (
               <button
-                key={option}
-                onClick={() => setSelectedQuantity(option)}
+                key={variant.id}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setSelectedVariant(variant)
+                }}
                 className={`flex-1 px-2 py-1 text-xs font-medium rounded border transition-colors ${
-                  selectedQuantity === option
+                  selectedVariant?.id === variant.id
                     ? 'bg-green-600 text-white border-green-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-green-600 hover:text-green-600'
                 }`}
               >
-                {option}
+                {variant.quantity_option}
               </button>
             ))}
           </div>

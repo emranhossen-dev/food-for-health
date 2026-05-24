@@ -565,6 +565,191 @@ export default function AddProductForm() {
     toast.success('Form cleared successfully!')
   }
 
+  const generateProductImages = (productName: string, category: string) => {
+    // Generate realistic product image URLs based on product type
+    const imageUrls = []
+    
+    if (productName.includes('milk') || category.includes('dairy')) {
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1550989460-39adf01451bb?w=800&h=600&fit=crop'
+      )
+    } else if (productName.includes('fruit') || category.includes('fruit')) {
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1519996529931-28324d5a630e?w=800&h=600&fit=crop'
+      )
+    } else if (productName.includes('vitamin') || productName.includes('supplement')) {
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1606339918617-08df3246d41f?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+      )
+    } else if (productName.includes('honey') || productName.includes('organic')) {
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1587049352846-3a273ba261c6?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1607623814075-e37df9355c9a?w=800&h=600&fit=crop'
+      )
+    } else {
+      // Default product images
+      imageUrls.push(
+        'https://images.unsplash.com/photo-1542826658-752c917ea262?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1568901346406-7a3b5453a5b8?w=800&h=600&fit=crop'
+      )
+    }
+
+    return imageUrls.map((url, index) => ({
+      id: Date.now().toString() + index,
+      url: url,
+      is_primary: index === 0
+    }))
+  }
+
+  const generateProductVariants = (unitType: string, basePrice: string) => {
+    const variants = []
+    const price = parseFloat(basePrice) || 100
+
+    if (unitType === 'solid') {
+      variants.push(
+        {
+          id: Date.now().toString() + '1',
+          quantity_option: '250g',
+          quantity_type: 'weight' as const,
+          current_price: (price * 0.5).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '50',
+          is_default: true,
+          sort_order: 0
+        },
+        {
+          id: Date.now().toString() + '2',
+          quantity_option: '500g',
+          quantity_type: 'weight' as const,
+          current_price: price.toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '30',
+          is_default: false,
+          sort_order: 1
+        },
+        {
+          id: Date.now().toString() + '3',
+          quantity_option: '1kg',
+          quantity_type: 'weight' as const,
+          current_price: (price * 1.8).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '20',
+          is_default: false,
+          sort_order: 2
+        }
+      )
+    } else if (unitType === 'liquid') {
+      variants.push(
+        {
+          id: Date.now().toString() + '1',
+          quantity_option: '250ml',
+          quantity_type: 'volume' as const,
+          current_price: (price * 0.3).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '40',
+          is_default: true,
+          sort_order: 0
+        },
+        {
+          id: Date.now().toString() + '2',
+          quantity_option: '500ml',
+          quantity_type: 'volume' as const,
+          current_price: (price * 0.6).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '25',
+          is_default: false,
+          sort_order: 1
+        },
+        {
+          id: Date.now().toString() + '3',
+          quantity_option: '1L',
+          quantity_type: 'volume' as const,
+          current_price: price.toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '15',
+          is_default: false,
+          sort_order: 2
+        }
+      )
+    } else {
+      variants.push(
+        {
+          id: Date.now().toString() + '1',
+          quantity_option: '1pc',
+          quantity_type: 'pieces' as const,
+          current_price: price.toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '100',
+          is_default: true,
+          sort_order: 0
+        },
+        {
+          id: Date.now().toString() + '2',
+          quantity_option: '3pcs',
+          quantity_type: 'pieces' as const,
+          current_price: (price * 2.5).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '50',
+          is_default: false,
+          sort_order: 1
+        },
+        {
+          id: Date.now().toString() + '3',
+          quantity_option: '5pcs',
+          quantity_type: 'pieces' as const,
+          current_price: (price * 4).toFixed(2),
+          old_price: '',
+          discount_percentage: '',
+          pricing_type: 'fix' as const,
+          stock_quantity: '30',
+          is_default: false,
+          sort_order: 2
+        }
+      )
+    }
+
+    return variants
+  }
+
+  const getSelectedUnitsFromVariants = (variants: any[]) => {
+    const units = {
+      gm: false,
+      ml: false,
+      L: false,
+      kg: false,
+      pc: false
+    }
+
+    variants.forEach(variant => {
+      if (variant.quantity_option.includes('gm')) units.gm = true
+      if (variant.quantity_option.includes('kg')) units.kg = true
+      if (variant.quantity_option.includes('ml')) units.ml = true
+      if (variant.quantity_option.includes('L')) units.L = true
+      if (variant.quantity_option.includes('pc')) units.pc = true
+    })
+
+    return units
+  }
+
   const handleAiFill = async () => {
     if (!formData.name_en.trim()) {
       toast.error('Please enter a product name first')
@@ -647,19 +832,36 @@ export default function AddProductForm() {
         }
       }
 
-      // Fill form with AI-generated data including price and category
-      setFormData(prev => ({
-        ...prev,
-        description: prev.description || mockAiData.description,
-        name_bn: prev.name_bn || mockAiData.name_bn,
-        current_price: prev.current_price || mockAiData.current_price,
-        category_id: prev.category_id || mockAiData.category_id,
-        key_health_benefits: prev.key_health_benefits.length > 0 ? prev.key_health_benefits : mockAiData.key_health_benefits,
-        nutritional_info: prev.nutritional_info || mockAiData.nutritional_info,
-        dosage_and_usage: prev.dosage_and_usage || mockAiData.dosage_and_usage,
-        unit: prev.unit || mockAiData.unit,
-        unit_type: prev.unit_type || mockAiData.unit_type
-      }))
+      // Fill form with AI-generated data including price, category, and images
+      setFormData(prev => {
+        const updatedData = {
+          ...prev,
+          description: prev.description || mockAiData.description,
+          name_bn: prev.name_bn || mockAiData.name_bn,
+          current_price: prev.current_price || mockAiData.current_price,
+          category_id: prev.category_id || mockAiData.category_id,
+          key_health_benefits: prev.key_health_benefits.length > 0 ? prev.key_health_benefits : mockAiData.key_health_benefits,
+          nutritional_info: prev.nutritional_info || mockAiData.nutritional_info,
+          dosage_and_usage: prev.dosage_and_usage || mockAiData.dosage_and_usage,
+          unit: prev.unit || mockAiData.unit,
+          unit_type: prev.unit_type || mockAiData.unit_type
+        }
+
+        // Add AI-generated product images if none exist
+        if (prev.images.length === 0) {
+          const aiImages = generateProductImages(productName, category)
+          updatedData.images = aiImages
+        }
+
+        // Add AI-generated variants if none exist
+        if (prev.variants.length === 0) {
+          const aiVariants = generateProductVariants(mockAiData.unit_type, mockAiData.current_price)
+          updatedData.variants = aiVariants
+          updatedData.selected_units = getSelectedUnitsFromVariants(aiVariants)
+        }
+
+        return updatedData
+      })
 
       toast.success('Product details filled with AI assistance!')
     } catch (error) {
