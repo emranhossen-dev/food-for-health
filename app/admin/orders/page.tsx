@@ -12,14 +12,15 @@ interface Order {
   customer_email: string
   customer_phone: string
   total_amount: number
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  payment_status: 'pending' | 'paid' | 'failed'
-  shipping_address: any
+  order_status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
+  shipping_address: string
   created_at: string
   order_items?: Array<{
     product_name: string
     quantity: number
-    price: number
+    unit_price: number
+    total_price: number
   }>
 }
 
@@ -51,7 +52,7 @@ export default function AdminOrders() {
 
       // Apply status filter
       if (filterStatus !== 'all') {
-        query = query.eq('status', filterStatus)
+        query = query.eq('order_status', filterStatus)
       }
 
       const { data, error } = await query
@@ -67,11 +68,11 @@ export default function AdminOrders() {
     }
   }
 
-  const handleStatusUpdate = async (orderId: string, newStatus: Order['status']) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: Order['order_status']) => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus })
+        .update({ order_status: newStatus })
         .eq('id', orderId)
 
       if (error) throw error
@@ -104,8 +105,9 @@ export default function AdminOrders() {
   const getStatusColor = (status: string) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      processing: 'bg-purple-100 text-purple-800',
+      shipped: 'bg-indigo-100 text-indigo-800',
       delivered: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800'
     }
@@ -116,7 +118,8 @@ export default function AdminOrders() {
     const colors = {
       pending: 'bg-orange-100 text-orange-800',
       paid: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800'
+      failed: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
     }
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
@@ -169,6 +172,7 @@ export default function AdminOrders() {
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
               <option value="processing">Processing</option>
               <option value="shipped">Shipped</option>
               <option value="delivered">Delivered</option>
@@ -235,11 +239,12 @@ export default function AdminOrders() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
-                        value={order.status}
-                        onChange={(e) => handleStatusUpdate(order.id, e.target.value as Order['status'])}
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)} cursor-pointer`}
+                        value={order.order_status}
+                        onChange={(e) => handleStatusUpdate(order.id, e.target.value as Order['order_status'])}
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.order_status)} cursor-pointer`}
                       >
                         <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
                         <option value="processing">Processing</option>
                         <option value="shipped">Shipped</option>
                         <option value="delivered">Delivered</option>
@@ -298,16 +303,12 @@ export default function AdminOrders() {
               </div>
 
               {/* Shipping Address */}
-              {selectedOrder.shipping_address && (
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-white font-medium mb-2">Shipping Address</h3>
-                  <div className="text-sm text-gray-300">
-                    <p>{selectedOrder.shipping_address.address}</p>
-                    <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.postal_code}</p>
-                    <p>{selectedOrder.shipping_address.country}</p>
-                  </div>
+              <div className="bg-gray-700 rounded-lg p-4">
+                <h3 className="text-white font-medium mb-2">Shipping Address</h3>
+                <div className="text-sm text-gray-300">
+                  <p>{selectedOrder.shipping_address}</p>
                 </div>
-              )}
+              </div>
 
               {/* Order Items */}
               <div className="bg-gray-700 rounded-lg p-4">
@@ -316,7 +317,7 @@ export default function AdminOrders() {
                   {selectedOrder.order_items?.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm text-gray-300">
                       <span>{item.product_name} x {item.quantity}</span>
-                      <span>৳{(item.price * item.quantity).toLocaleString()}</span>
+                      <span>৳{item.total_price.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

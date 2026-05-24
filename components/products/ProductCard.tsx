@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ShoppingCart, Heart } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { useCart } from '@/contexts/CartContext'
 
 interface ProductImage {
   id: string
@@ -38,6 +39,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart()
   const [selectedQuantity, setSelectedQuantity] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -103,8 +105,19 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     setLoading(true)
     try {
-      // TODO: Implement cart functionality with Supabase
-      toast.success('Added to cart successfully!')
+      const cartItem = {
+        id: product.id,
+        name_en: product.name_en,
+        name_bn: product.name_bn,
+        image_url: primaryImage?.image_url,
+        current_price: currentPricing.current_price,
+        old_price: currentPricing.old_price,
+        unit: product.unit,
+        quantity: 1,
+        selectedQuantity: selectedQuantity
+      }
+      
+      addToCart(cartItem)
     } catch (error) {
       toast.error('Failed to add to cart')
     } finally {
@@ -118,8 +131,21 @@ export default function ProductCard({ product }: ProductCardProps) {
       return
     }
 
-    // TODO: Implement buy now functionality
-    toast.success('Redirecting to checkout...')
+    // Add to cart and redirect to checkout
+    const cartItem = {
+      id: product.id,
+      name_en: product.name_en,
+      name_bn: product.name_bn,
+      image_url: primaryImage?.image_url,
+      current_price: currentPricing.current_price,
+      old_price: currentPricing.old_price,
+      unit: product.unit,
+      quantity: 1,
+      selectedQuantity: selectedQuantity
+    }
+    
+    addToCart(cartItem)
+    window.location.href = '/checkout'
   }
 
   return (

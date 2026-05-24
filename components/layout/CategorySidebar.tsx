@@ -5,11 +5,21 @@ import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphen
+    .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+}
+
 interface Category {
   id: string
   name_en: string
   name_bn?: string
   image_url?: string
+  slug?: string
 }
 
 export default function CategorySidebar() {
@@ -62,10 +72,26 @@ export default function CategorySidebar() {
       </h2>
       
       <div className="flex-1 overflow-y-auto space-y-2">
+        {/* All Categories Option */}
+        <Link
+          href="/all-products"
+          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group bg-primary/5 border border-primary/20"
+        >
+          <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center">
+            <span className="text-white text-sm font-bold">
+              All
+            </span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-gray-900 group-hover:text-primary">All Products</h3>
+            <p className="text-xs text-gray-600">View all categories</p>
+          </div>
+        </Link>
+        
         {categories.map((category) => (
           <Link
             key={category.id}
-            href={`/products?category=${category.id}`}
+            href={`/${category.slug || generateSlug(category.name_en)}`}
             className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
           >
             <div className="w-10 h-10 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
